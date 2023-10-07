@@ -2,7 +2,7 @@ import Head from "next/head";
 
 import { RouterOutputs, api } from "~/utils/api";
 import { SignInButton, useUser } from "@clerk/nextjs";
-import React from "react";
+import React, { useState } from "react";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import Image from "next/image";
@@ -12,6 +12,18 @@ dayjs.extend(relativeTime);
 
 const CreatePostWizard = () => {
   const { user } = useUser();
+
+  const [input, setInput] = useState('');
+
+  const ctx = api.useContext(); 
+
+  const { mutate, isLoading: isPosting } = api.posts.create.useMutation({
+    onSuccess: () => {
+      setInput("");
+      ctx.posts.getAll.invalidate();
+    }
+  });
+
   console.log(user);
   
   if(!user) return null;
@@ -19,7 +31,15 @@ const CreatePostWizard = () => {
   return (
     <div className="flex w-full gap-3">
       <Image src={user.imageUrl} alt="Profile image" width={56} height={56} className="w-14 h-14 rounded-full border" />
-      <input placeholder="Type some emojis!" className="grow bg-transparent outline-none" />
+      <input 
+        value={input} 
+        onChange={(e) => setInput(e.target.value)} 
+        type="text" 
+        placeholder="Type some emojis!" 
+        className="grow bg-transparent outline-none" 
+        disabled={isPosting}
+      />
+      <button onClick={() => mutate({ content: input })}>Post</button>
     </div>
   )
 }
@@ -36,7 +56,7 @@ const PostView = (props: PostWithUser) => {
         <span>{`@${author.username}`}</span>
         <span className="font-thin">{` · ${dayjs(post.createdAt).fromNow()}`}</span>
       </div>
-      <span>{post.content}</span>
+      <span className="text-2xl">{post.content}</span>
     </div>
   </div>
   )
@@ -50,7 +70,7 @@ const Feed = () => {
 
   return (
     <div className="flex flex-col">
-        {[...data, ...data]?.map((fullPost) => (
+        {data.map((fullPost) => (
           <PostView {...fullPost} key={fullPost.post.id}/>
         ))}
     </div>
