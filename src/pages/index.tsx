@@ -6,82 +6,121 @@ import React, { useState } from "react";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import Image from "next/image";
-import { LoadingPage } from "~/components/Loading";
+import { LoadingPage, LoadingSpinner } from "~/components/Loading";
+import toast from "react-hot-toast";
 
 dayjs.extend(relativeTime);
 
 const CreatePostWizard = () => {
   const { user } = useUser();
 
-  const [input, setInput] = useState('');
+  const [input, setInput] = useState("");
 
-  const ctx = api.useContext(); 
+  const ctx = api.useContext();
 
   const { mutate, isLoading: isPosting } = api.posts.create.useMutation({
     onSuccess: () => {
       setInput("");
       ctx.posts.getAll.invalidate();
-    }
+    },
+    onError: (e) => {
+      const errorMessage = e.data?.zodError?.fieldErrors.content;
+      if (errorMessage && errorMessage[0]) {
+        toast.error(errorMessage[0]);
+      } else {
+        toast.error("Failed to create post! Please try again later.");
+      }
+    },
   });
 
   console.log(user);
-  
-  if(!user) return null;
+
+  if (!user) return null;
 
   return (
     <div className="flex w-full gap-3">
-      <Image src={user.imageUrl} alt="Profile image" width={56} height={56} className="w-14 h-14 rounded-full border" />
-      <input 
-        value={input} 
-        onChange={(e) => setInput(e.target.value)} 
-        type="text" 
-        placeholder="Type some emojis!" 
-        className="grow bg-transparent outline-none" 
-        disabled={isPosting}
+      <Image
+        src={user.imageUrl}
+        alt="Profile image"
+        width={56}
+        height={56}
+        className="h-14 w-14 rounded-full"
       />
-      <button onClick={() => mutate({ content: input })}>Post</button>
+      <input
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+        type="text"
+        placeholder="Type some emojis!"
+        className="grow bg-transparent outline-none"
+        disabled={isPosting}
+        onKeyDown={e => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            if (input !== "") {
+              mutate({ content: input })}
+            }
+          }
+        }
+      />
+      {input !== "" && !isPosting && (
+        <button onClick={() => mutate({ content: input })} disabled={isPosting}>
+          Post
+        </button>
+      )}
+      {isPosting && (
+        <div className="flex justify-center items-center">
+          <LoadingSpinner size={20} />
+        </div>
+      )}
     </div>
-  )
-}
+  );
+};
 
 type PostWithUser = RouterOutputs["posts"]["getAll"][number];
 
 const PostView = (props: PostWithUser) => {
   const { post, author } = props;
   return (
-  <div className="p-4 border-b border-slate-400 flex gap-3">
-    <Image src={author.imageUrl} alt="User-photo" width={56} height={56} className="w-14 h-14 rounded-full border" />
-    <div className="flex flex-col">
-      <div className="flex gap-1 text-slate-300">
-        <span>{`@${author.username}`}</span>
-        <span className="font-thin">{` · ${dayjs(post.createdAt).fromNow()}`}</span>
+    <div className="flex gap-3 border-b border-slate-400 p-4">
+      <Image
+        src={author.imageUrl}
+        alt="User-photo"
+        width={56}
+        height={56}
+        className="h-14 w-14 rounded-full"
+      />
+      <div className="flex flex-col">
+        <div className="flex gap-1 text-slate-300">
+          <span>{`@${author.username}`}</span>
+          <span className="font-thin">{` · ${dayjs(
+            post.createdAt,
+          ).fromNow()}`}</span>
+        </div>
+        <span className="text-2xl">{post.content}</span>
       </div>
-      <span className="text-2xl">{post.content}</span>
     </div>
-  </div>
-  )
-}
+  );
+};
 
 const Feed = () => {
   const { data, isLoading: postsLoading } = api.posts.getAll.useQuery();
 
-  if (postsLoading) return <LoadingPage/>;
+  if (postsLoading) return <LoadingPage />;
   if (!data) return <div>Something went wrong</div>;
 
   return (
     <div className="flex flex-col">
-        {data.map((fullPost) => (
-          <PostView {...fullPost} key={fullPost.post.id}/>
-        ))}
+      {data.map((fullPost) => (
+        <PostView {...fullPost} key={fullPost.post.id} />
+      ))}
     </div>
-  )
-}
+  );
+};
 
 export default function Home() {
- 
   const { user, isLoaded: userLoaded, isSignedIn } = useUser();
   api.posts.getAll.useQuery();
-  if (!userLoaded) return <LoadingPage/>;
+  if (!userLoaded) return <LoadingPage />;
   return (
     <>
       <Head>
@@ -90,19 +129,18 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <main className="flex h-screen justify-center">
-        <div className="border-x border-slate-400 w-full h-full md:max-w-2xl">
-          <div className="border-b border-slate-400 p-4 flex">
+        <div className="h-full w-full border-x border-slate-400 md:max-w-2xl">
+          <div className="flex border-b border-slate-400 p-4">
             {!isSignedIn && (
               <div className="flex justify-center">
-                <SignInButton/>
+                <SignInButton />
               </div>
             )}
-            {!!isSignedIn && <CreatePostWizard/>}
+            {!!isSignedIn && <CreatePostWizard />}
           </div>
-          <Feed/>
+          <Feed />
         </div>
       </main>
     </>
   );
 }
-
