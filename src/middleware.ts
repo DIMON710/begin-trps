@@ -1,8 +1,10 @@
-import { authMiddleware } from "@clerk/nextjs";
+import { authMiddleware, withClerkMiddleware } from "@clerk/nextjs";
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
-export default authMiddleware({
-    publicRoutes: ["/", "/((?!api|trpc))(_next.*|.+\.[\w]+$)", "/api/trpc/posts.getAll", "/api/trpc/profile.getUserByUsername"],
-});
+export default withClerkMiddleware((req: NextRequest) => {
+    return NextResponse.next()
+})
  
 export const config = {
       matcher: ['/((?!.+\\.[\\w]+$|_next).*)', '/', '/(api|trpc)(.*)'],

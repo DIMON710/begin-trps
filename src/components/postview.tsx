@@ -12,13 +12,13 @@ export const PostView = (props: PostWithUser) => {
     const { post, author } = props;
     return (
       <div className="flex gap-3 border-b border-slate-400 p-4">
-        <Image
+        <Link href={`/@${author.username}`} className="shrink-0"><Image
           src={author.imageUrl}
           alt="User-photo"
           width={56}
           height={56}
           className="h-14 w-14 rounded-full"
-        />
+        /></Link>
         <div className="flex flex-col">
           <div className="flex gap-1 text-slate-300">
             <Link href={`/@${author.username}`}><span>{`@${author.username}`}</span></Link>

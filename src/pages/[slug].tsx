@@ -1,7 +1,6 @@
-import { GetStaticProps, type NextPage } from "next";
+import type { GetStaticProps, NextPage } from "next";
 import Head from "next/head";
 import Image from "next/image";
-import { useParams } from "next/navigation";
 import { useRouter } from "next/router";
 import { PageLayout } from "~/components/layout";
 import { LoadingPage } from "~/components/loading";
@@ -41,6 +40,7 @@ const ProfilePage: NextPage = () => {
   if (!data) {
     return <div>404</div>
   }
+
   return (
     <>
       <Head>
